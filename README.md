@@ -37,6 +37,13 @@ defaults write com.apple.screencapture location ~/Desktop/ScreenCap
 killall SystemUIServer
 ```
 
+You can also disable the floating thumbnail preview that appears in the bottom-right corner after each screenshot. Since autoscreencap copies to your clipboard instantly, you don't need it:
+
+```sh
+defaults write com.apple.screencapture show-thumbnail -bool false
+killall SystemUIServer
+```
+
 ### 3. Run it
 
 ```sh

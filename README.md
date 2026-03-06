@@ -48,12 +48,24 @@ Take a screenshot (`Cmd+Shift+3` or `Cmd+Shift+4`) and it'll be on your clipboar
 
 ### 4. (Optional) Auto-launch in iTerm2
 
-To have it always running in a dedicated tab:
+Create a dedicated profile so autoscreencap starts automatically whenever you open iTerm2:
 
 1. Open **iTerm2 > Settings > Profiles**
 2. Create a new profile (e.g., "ScreenCap")
 3. Under **General > Command**, select **Custom Shell** and enter the full path to the script
-4. Open a new tab with that profile — done
+4. Under **Window**, size it small — this profile just needs to sit in the corner and do its job
+
+#### Auto-open on launch with a Window Arrangement
+
+You can have iTerm2 open multiple windows/tabs on startup — your normal shells plus the ScreenCap watcher:
+
+1. Open the windows/tabs you want at startup (e.g., 3 default profile windows + 1 small ScreenCap window)
+2. Arrange and resize them how you like
+3. Go to **Window > Save Window Arrangement** and give it a name
+4. In **iTerm2 > Settings > General > Startup**, set "Window restoration policy" to **Open Default Window Arrangement**
+5. In **iTerm2 > Settings > Arrangements**, select your arrangement and click **Set Default**
+
+Now every time iTerm2 launches, your ScreenCap watcher opens automatically alongside your regular terminals.
 
 ## Configuration
 

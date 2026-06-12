@@ -8,7 +8,7 @@ No apps to open. No extra keyboard shortcuts. Just take a screenshot and paste i
 
 When a new screenshot lands in your watch directory:
 
-1. **Copies it to your clipboard** — ready to paste into Slack, email, docs, whatever
+1. **Copies it to your clipboard** — as image data **and** file URL **and** absolute path text, so paste does the right thing in image apps (Slack, Mail), file managers (Finder), and CLIs (Claude Code, terminals)
 2. **Plays a sound** — so you know it worked
 3. **Prints clickable links** in your terminal — open the file or reveal it in Finder
 
@@ -16,6 +16,7 @@ When a new screenshot lands in your watch directory:
 
 - macOS (tested on Sonoma / Apple Silicon)
 - [fswatch](https://github.com/emcrisostomo/fswatch) — `brew install fswatch`
+- Xcode Command Line Tools (for `swiftc` — only needed once, to build the clipboard helper) — `xcode-select --install`
 - A terminal that supports OSC 8 hyperlinks ([iTerm2](https://iterm2.com), Ghostty, etc.)
 - python3 (optional — used for URL-encoding paths, has a fallback)
 
@@ -50,6 +51,8 @@ killall SystemUIServer
 chmod +x autoscreencap.sh
 ./autoscreencap.sh
 ```
+
+The first run builds the Swift clipboard helper (`copy-image-and-url`) automatically; subsequent runs reuse it.
 
 Take a screenshot (`Cmd+Shift+3` or `Cmd+Shift+4`) and it'll be on your clipboard instantly.
 
@@ -93,7 +96,19 @@ SCREENCAP_DIR=~/Screenshots SCREENCAP_SOUND=Submarine ./autoscreencap.sh
 
 ## How it works
 
-Uses `fswatch` to monitor the watch directory for filesystem events. When a new `.png` appears, it uses AppleScript to copy the image data directly to the clipboard (not just the file reference), then prints [OSC 8 hyperlinks](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda) for quick access.
+Uses `fswatch` to monitor the watch directory for filesystem events. When a new `.png` appears, a small Swift helper (`copy-image-and-url`) writes three representations to the system clipboard in one `NSPasteboardItem`:
+
+| UTI | Content | Used by |
+|---|---|---|
+| `public.png` | Image pixel data | Slack, Mail, Notes, image editors |
+| `public.file-url` | `file://` URL | Finder, Path Finder, file dialogs |
+| `public.utf8-plain-text` | Absolute path string | Claude Code CLI, terminals, text fields |
+
+That last one is what lets `Cmd+V` attach the screenshot inside CLIs like Claude Code — the paste handler sees the path as text, and the prompt parser resolves it to an image attachment (same as drag-dropping the file in).
+
+The script then prints [OSC 8 hyperlinks](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda) for quick access.
+
+The helper source (`copy-image-and-url.swift`) lives next to the script; it's compiled on first run.
 
 ## License
 

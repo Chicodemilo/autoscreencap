@@ -21,6 +21,11 @@ LOGFILE="${SCREENCAP_LOG:-$HOME/autoscreencap.log}"
 SOUND_NAME="${SCREENCAP_SOUND:-Glass}"
 DEBOUNCE_SEC="${SCREENCAP_DEBOUNCE:-2}"
 
+# Resolve script directory so we can find the bundled Swift clipboard helper.
+SCRIPT_DIR="${0:A:h}"
+COPY_HELPER="$SCRIPT_DIR/copy-image-and-url"
+COPY_HELPER_SRC="$SCRIPT_DIR/copy-image-and-url.swift"
+
 # ── Detect tool paths ─────────────────────────────────────────────────────────
 # fswatch — try Homebrew ARM first, then Intel
 if [[ -x /opt/homebrew/bin/fswatch ]]; then
@@ -41,13 +46,26 @@ done
 # macOS system binaries (fixed paths)
 FIND=/usr/bin/find
 STAT=/usr/bin/stat
-OSASCRIPT=/usr/bin/osascript
 AFPLAY=/usr/bin/afplay
 
 # ── Preflight checks ──────────────────────────────────────────────────────────
 if [[ ! -d "$WATCH_DIR" ]]; then
   echo "Creating watch directory: $WATCH_DIR"
   mkdir -p "$WATCH_DIR"
+fi
+
+# Build the Swift clipboard helper on first run (or whenever source is newer).
+if [[ ! -x "$COPY_HELPER" || "$COPY_HELPER_SRC" -nt "$COPY_HELPER" ]]; then
+  if [[ -f "$COPY_HELPER_SRC" ]]; then
+    echo "Building clipboard helper (one-time): $COPY_HELPER"
+    if ! /usr/bin/xcrun swiftc "$COPY_HELPER_SRC" -o "$COPY_HELPER"; then
+      echo "ERROR: failed to compile $COPY_HELPER_SRC — is Xcode CLI tools installed? Try: xcode-select --install" >&2
+      exit 1
+    fi
+  else
+    echo "ERROR: $COPY_HELPER_SRC not found alongside script" >&2
+    exit 1
+  fi
 fi
 
 # ── Colors ─────────────────────────────────────────────────────────────────────
@@ -83,9 +101,10 @@ $FSWATCH -0 "$WATCH_DIR" | while read -d "" event; do
   LAST_FILE="$latest_file"
   LAST_MOD="$mod_time"
 
-  # Copy image to clipboard
-  $OSASCRIPT -e "set the clipboard to (read (POSIX file \"$latest_file\") as «class PNGf»)" \
-    >> "$LOGFILE" 2>&1
+  # Copy to clipboard with PNG data + file URL + absolute path string.
+  # The path-as-text makes Cmd+V work in CLIs like Claude Code that read
+  # the clipboard's plain-text representation rather than its image data.
+  "$COPY_HELPER" "$latest_file" >> "$LOGFILE" 2>&1
 
   # Play confirmation sound
   $AFPLAY "/System/Library/Sounds/${SOUND_NAME}.aiff" &

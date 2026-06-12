@@ -1,0 +1,6 @@
+# Compiled Swift clipboard helper — built on first run by autoscreencap.sh,
+# or manually with: swiftc copy-image-and-url.swift -o copy-image-and-url
+copy-image-and-url
+
+# Logs
+*.log
